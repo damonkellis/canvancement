@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name        Access Report Data
-// @namespace   https://github.com/jamesjonesmath/canvancement
+// @name        Access report - UoA version
+// @namespace   https://
 // @description Generates a .CSV download of the access report for all students
-// @include     https://*.instructure.com/courses/*/users
-// @version     6
+// @include     https://canvas.auckland.ac.nz/courses/*/users
+// @version     1
 // @grant       none
 // ==/UserScript==
 requirejs(
@@ -22,7 +22,7 @@ requirejs(
     function addAccessReportButton() {
       if ($('#jj_access_report').length === 0) {
         $('#people-options > ul').append(
-          '<li class="ui-menu-item" role="presentation" tabindex="-1"><a id="jj_access_report" class="ui-corner-all" role="menuitem"><i class="icon-analytics"></i> Access Report Data</a></li>');
+          '<li class="ui-menu-item" role="presentation" tabindex="-1"><a id="jj_access_report" class="ui-corner-all" role="menuitem"><i class="icon-analytics"></i> Access SRES Data</a></li>');
         $('#jj_access_report').one('click', accessReport);
       }
       return;
@@ -58,7 +58,7 @@ requirejs(
       aborted = false;
       setupPool();
       var courseId = getCourseId();
-      var url = '/api/v1/courses/' + courseId + '/sections?include[]=students&per_page=100';
+      var url = '/api/v1/courses/' + courseId + '/sections?include[]=students&include[]=email&per_page=100';
       progressbar();
       pending = 0;
       getStudents(courseId, url);
@@ -96,6 +96,9 @@ requirejs(
                 user.section_name = section.name;
                 user.sis_section_id = section.sis_section_id;
                 user.sis_course_id = section.sis_course_id;
+                var splitname = user.sortable_name.split(",");
+                user.firstname = splitname[1].trim();
+                user.surname = splitname[0].trim();
                 userData[user.id] = user;
               }
             }
@@ -200,14 +203,27 @@ requirejs(
 
     function createCSV() {
       var fields = [ {
-        'name' : 'User ID',
+        'name' : 'Canvas User ID',
         'src' : 'u.id'
+      }, {
+        'name' : 'UoA Username',
+        'src' : 'u.sis_login_id',
+        'sis' : true
       }, {
         'name' : 'Display Name',
         'src' : 'u.name'
       }, {
         'name' : 'Sortable Name',
         'src' : 'u.sortable_name'
+      }, {
+         'name' : 'First name',
+         'src' : 'u.firstname'
+      }, {
+         'name' : 'Surname',
+         'src' : 'u.surname'
+      }, {
+        'name' : 'Email',
+        'src' : 'u.email'
       }, {
         'name' : 'Category',
         'src' : 'a.asset_category'
@@ -262,10 +278,6 @@ requirejs(
       }, {
         'name' : 'SIS Section ID',
         'src' : 'u.sis_section_id',
-        'sis' : true
-      }, {
-        'name' : 'SIS Login ID',
-        'src' : 'u.sis_login_id',
         'sis' : true
       }, {
         'name' : 'SIS User ID',
@@ -365,7 +377,7 @@ requirejs(
             $('body').append('<div id="jj_progress_dialog"></div>');
             $('#jj_progress_dialog').append('<div id="jj_progressbar"></div>');
             $('#jj_progress_dialog').dialog({
-              'title' : 'Fetching Access Reports',
+              'title' : 'Fetching SRES Reports',
               'autoOpen' : false,
               'buttons' : [ {
                 'text' : 'Cancel',
